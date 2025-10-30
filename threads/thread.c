@@ -186,6 +186,161 @@ thread_create(const char *name, int priority, thread_func *function, void *aux)
 
     return tid;
 }
+/* -------------------- MISSING IMPLEMENTATIONS (add once) -------------------- */
+
+#include "devices/timer.h"
+#include "threads/synch.h"
+#ifdef USERPROG
+#include "userprog/process.h"
+#endif
+
+/* idle thread */
+static void
+idle (void *idle_started_ UNUSED)
+{
+  struct semaphore *idle_started = idle_started_;
+  idle_thread = thread_current ();
+  sema_up (idle_started);
+
+  for (;;)
+    {
+      intr_disable ();
+      thread_block ();
+      asm volatile ("sti; hlt" : : : "memory");
+    }
+}
+
+/* 커널 스택 프레임 할당: 스택 포인터를 size만큼 위로 이동 */
+static void *
+alloc_frame (struct thread *t, size_t size)
+{
+  ASSERT (t != NULL);
+  ASSERT (size % sizeof (uint32_t) == 0);
+  t->stack -= size;
+  return t->stack;
+}
+
+/* 유효한 thread 구조체인지 검사 */
+static bool
+is_thread (struct thread *t)
+{
+  return t != NULL && t->magic == THREAD_MAGIC;
+}
+
+/* 스케줄 스위치 후 마무리 */
+void
+thread_schedule_tail (struct thread *prev)
+{
+  struct thread *cur = running_thread ();
+  ASSERT (intr_get_level () == INTR_OFF);
+
+  cur->status = THREAD_RUNNING;
+  thread_ticks = 0;
+
+#ifdef USERPROG
+  process_activate ();
+#endif
+
+  if (prev != NULL && prev->status == THREAD_DYING && prev != initial_thread)
+    {
+      ASSERT (prev != cur);
+      palloc_free_page (prev);
+    }
+}
+
+/* 통계 출력 (tests에서 링크됨) */
+void
+thread_print_stats (void)
+{
+  printf ("Thread: %lld idle ticks, %lld kernel ticks, %lld user ticks\n",
+          idle_ticks, kernel_ticks, user_ticks);
+}
+
+/* 모든 스레드에 대해 콜백 실행 */
+void
+thread_foreach (thread_action_func *func, void *aux)
+{
+  struct list_elem *e;
+
+  ASSERT (intr_get_level () == INTR_OFF);
+
+  for (e = list_begin (&all_list); e != list_end (&all_list); e = list_next (e))
+    {
+      struct thread *t = list_entry (e, struct thread, allelem);
+      func (t, aux);
+    }
+}
+
+/* donation 리스트 정렬용 비교자: 높은 priority 우선 */
+bool
+thread_compare_donation_priority (const struct list_elem *a,
+                                  const struct list_elem *b,
+                                  void *aux UNUSED)
+{
+  const struct thread *ta = list_entry (a, struct thread, donation_elem);
+  const struct thread *tb = list_entry (b, struct thread, donation_elem);
+  return ta->priority > tb->priority;
+}
+
+/* 현재 스레드의 priority를 (original vs donation 최대값)으로 갱신 */
+void
+thread_update_priority (struct thread *t)
+{
+  int donated = PRI_MIN;
+
+  if (!list_empty (&t->donations))
+    {
+      struct thread *top =
+        list_entry (list_front (&t->donations), struct thread, donation_elem);
+      donated = top->priority;
+    }
+  t->priority = t->original_priority > donated ? t->original_priority : donated;
+}
+
+/* lock 해제 시, 그 lock을 기다리며 나에게 기부하던 항목 제거 */
+void
+thread_remove_donations (struct lock *lock)
+{
+  struct list_elem *e = list_begin (&thread_current ()->donations);
+  while (e != list_end (&thread_current ()->donations))
+    {
+      struct thread *donor = list_entry (e, struct thread, donation_elem);
+      struct list_elem *next = list_next (e);
+      if (donor->wait_on_lock == lock)
+        list_remove (&donor->donation_elem);
+      e = next;
+    }
+  thread_update_priority (thread_current ());
+}
+
+/* tests에서 사용: 현재 스레드 priority 설정 */
+void
+thread_set_priority (int new_priority)
+{
+  struct thread *cur = thread_current ();
+  cur->original_priority = new_priority;
+  thread_update_priority (cur);
+
+  if (!list_empty (&ready_list))
+    {
+      struct thread *front = list_entry (list_front (&ready_list),
+                                         struct thread, elem);
+      if (cur->priority < front->priority)
+        thread_yield ();
+    }
+}
+
+/* tests에서 사용: 현재 스레드 priority 조회 */
+int
+thread_get_priority (void)
+{
+  return thread_current ()->priority;
+}
+
+/* switch.S에서 참조하는 thread 구조의 stack 오프셋 심볼 */
+uint32_t thread_stack_ofs = offsetof (struct thread, stack);
+
+/* ------------------ END of MISSING IMPLEMENTATIONS ------------------ */
 
 /* 현재 스레드 차단 */
 void

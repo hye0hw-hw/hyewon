@@ -47,7 +47,7 @@ struct kernel_thread_frame
     thread_func *function; /* Function to call. */
     void *aux;            /* Auxiliary data for function. */
 };
-
+static struct list sleep_list;
 /* Statistics. */
 static long long idle_ticks;    /* # of timer ticks spent idle. */
 static long long kernel_ticks; /* # of timer ticks in kernel threads. */
@@ -155,6 +155,7 @@ thread_init (void)
 
     lock_init (&tid_lock);
     list_init (&ready_list);
+    list_init(&sleep_list);
     list_init (&all_list);
 
     /* Set up a thread structure for the running thread. */
@@ -168,6 +169,13 @@ thread_init (void)
     initial_thread->age = 0;
     initial_thread->wait_on_lock = NULL;
     list_init(&initial_thread->donations);
+}
+bool
+compare_tick (const struct list_elem *a, const struct list_elem *b, void *aux UNUSED)
+{
+    struct thread *ta = list_entry (a, struct thread, elem);
+    struct thread *tb = list_entry (b, struct thread, elem);
+    return ta->wakeup_tick < tb->wakeup_tick;
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.

@@ -7,6 +7,9 @@
 #include "threads/thread.h"
 #include "threads/synch.h"
 
+static bool cond_sema_priority_more (const struct list_elem *a,
+                                     const struct list_elem *b,
+                                     void *aux UNUSED);
 
 
 bool
@@ -318,8 +321,8 @@ cond_sema_priority_more (const struct list_elem *a,
                          const struct list_elem *b,
                          void *aux UNUSED)
 {
-  const struct semaphore_elem *sa = list_entry (a, struct semaphore_elem, elem);
-  const struct semaphore_elem *sb = list_entry (b, struct semaphore_elem, elem);
+ struct semaphore_elem *sa = list_entry (a, struct semaphore_elem, elem);
+ struct semaphore_elem *sb = list_entry (b, struct semaphore_elem, elem);
 
   struct thread *ta = list_entry (list_front (&sa->semaphore.waiters), struct thread, elem);
   struct thread *tb = list_entry (list_front (&sb->semaphore.waiters), struct thread, elem);

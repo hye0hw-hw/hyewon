@@ -37,17 +37,7 @@ struct kernel_thread_frame
     void *aux;                  /* 인자 */
 };
 
-/* 스레드 전환 시 사용되는 프레임 구조체 */
-struct switch_entry_frame
-{
-    void *eip; /* 실행 위치 */
-};
 
-struct switch_threads_frame
-{
-    void *eip;
-    void *ebp;
-};
 
 /* 내부 함수 프로토타입 */
 static void idle(void *aux UNUSED);

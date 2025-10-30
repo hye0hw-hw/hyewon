@@ -30,6 +30,30 @@ static struct thread *initial_thread;
 static struct lock tid_lock;
 static unsigned thread_ticks;
 
+struct kernel_thread_frame
+{
+    void *eip;                  /* Return address */
+    thread_func *function;      /* 실행할 함수 포인터 */
+    void *aux;                  /* 인자 */
+};
+
+/* 스레드 전환 시 사용되는 프레임 구조체 */
+struct switch_entry_frame
+{
+    void *eip; /* 실행 위치 */
+};
+
+struct switch_threads_frame
+{
+    void *eip;
+    void *ebp;
+};
+
+/* 내부 함수 프로토타입 */
+static void idle(void *aux UNUSED);
+static bool is_thread(struct thread *t);
+static void *alloc_frame(struct thread *t, size_t size);
+
 bool thread_mlfqs;
 static long long idle_ticks, kernel_ticks, user_ticks;
 

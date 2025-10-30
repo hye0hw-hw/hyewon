@@ -88,6 +88,8 @@ int thread_effective_priority (const struct thread *t);
 /* 테스트 헬퍼(옵션) */
 void thread_set_mlfqs_enabled (bool on);
 bool thread_mlfqs_enabled (void);
-extern bool thread_mlfqs;
+
+extern bool thread_mlfqs;           // 방법1을 선택했다면 필요 (init.c가 씀)
+bool is_thread(struct thread *t);   // 사용 전에 원형 선언 필요
 
 #endif /* threads/thread.h */

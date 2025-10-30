@@ -100,6 +100,11 @@ struct thread
 
     /* Owned by thread.c. */
     unsigned magic; /* Detects stack overflow. */
+ int original_priority;           /* 원래 우선순위 저장 */
+    struct list donations;           /* 나에게 우선순위를 기부한 스레드들 */
+    struct list_elem donation_elem;  /* donations 리스트에 들어가는 나 자신의 요소 */
+    struct lock *wait_on_lock;       /* 내가 기다리고 있는 락 */
+    int age;     
 };
 
 /* If false (default), use round-robin scheduler.

@@ -24,62 +24,7 @@ typedef int tid_t;
 #define PRI_DEFAULT 31 /* Default priority. */
 #define PRI_MAX 63     /* Highest priority. */
 
-/* A kernel thread or user process.
 
-   Each thread structure is stored in its own 4 kB page.  The
-   thread structure itself sits at the very bottom of the page
-   (at offset 0).  The rest of the page is reserved for the
-   thread's kernel stack, which grows downward from the top of
-   the page (at offset 4 kB).  Here's an illustration:
-
-        4 kB +---------------------------------+
-             |          kernel stack           |
-             |                |                |
-             |                |                |
-             |                V                |
-             |         grows downward          |
-             |                                 |
-             |                                 |
-             |                                 |
-             |                                 |
-             |                                 |
-             |                                 |
-             |                                 |
-             |                                 |
-             +---------------------------------+
-             |              magic              |
-             |                :                |
-             |                :                |
-             |               name              |
-             |              status             |
-        0 kB +---------------------------------+
-
-   The upshot of this is twofold:
-
-      1. First, `struct thread' must not be allowed to grow too
-         big.  If it does, then there will not be enough room for
-         the kernel stack.  Our base `struct thread' is only a
-         few bytes in size.  It probably should stay well under 1
-         kB.
-
-      2. Second, kernel stacks must not be allowed to grow too
-         large.  If a stack overflows, it will corrupt the thread
-         state.  Thus, kernel functions should not allocate large
-         structures or arrays as non-static local variables.  Use
-         dynamic allocation with malloc() or palloc_get_page()
-         instead.
-
-   The first symptom of either of these problems will probably be
-   an assertion failure in thread_current(), which checks that
-   the `magic' member of the running thread's `struct thread' is
-   set to THREAD_MAGIC.  Stack overflow will normally change this
-   value, triggering the assertion. */
-/* The `elem' member has a dual purpose.  It can be an element in
-   the run queue (thread.c), or it can be an element in a
-   semaphore wait list (synch.c).  It can be used these two ways
-   only because they are mutually exclusive: only a thread in the
-   ready state is on the run queue, whereas only a thread in the
-   blocked state is on a semaphore wait list. */
 struct thread
 {
     /* Owned by thread.c. */
@@ -105,6 +50,7 @@ struct thread
     struct list_elem donation_elem;  /* donations 리스트에 들어가는 나 자신의 요소 */
     struct lock *wait_on_lock;       /* 내가 기다리고 있는 락 */
     int age;     
+    int64_t wakeup_tick;         
 };
 
 /* If false (default), use round-robin scheduler.

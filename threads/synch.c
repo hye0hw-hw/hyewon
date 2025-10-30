@@ -7,19 +7,7 @@
 #include "threads/thread.h"
 #include "threads/synch.h"
 
-static bool
-cond_sema_priority_more (const struct list_elem *a,
-                         const struct list_elem *b,
-                         void *aux UNUSED)
-{
-  const struct semaphore_elem *sa = list_entry (a, struct semaphore_elem, elem);
-  const struct semaphore_elem *sb = list_entry (b, struct semaphore_elem, elem);
 
-  struct thread *ta = list_entry (list_front (&sa->semaphore.waiters), struct thread, elem);
-  struct thread *tb = list_entry (list_front (&sb->semaphore.waiters), struct thread, elem);
-
-  return ta->priority > tb->priority;
-}
 
 bool
 compare_lock_priority (const struct list_elem *a,
@@ -174,7 +162,6 @@ lock_acquire (struct lock *lock)
                              compare_lock_priority, NULL);
         list_insert_ordered (&lock->holder->donations, &thread_current ()->donation_elem,
                              thread_compare_donation_priority, NULL);
-️
         struct thread *t = lock->holder;
         while (t != NULL && t->wait_on_lock != NULL) {
             thread_update_priority(t);
@@ -324,4 +311,18 @@ cond_broadcast (struct condition *cond, struct lock *lock)
 
     while (!list_empty (&cond->waiters))
         cond_signal (cond, lock);
+}
+
+static bool
+cond_sema_priority_more (const struct list_elem *a,
+                         const struct list_elem *b,
+                         void *aux UNUSED)
+{
+  const struct semaphore_elem *sa = list_entry (a, struct semaphore_elem, elem);
+  const struct semaphore_elem *sb = list_entry (b, struct semaphore_elem, elem);
+
+  struct thread *ta = list_entry (list_front (&sa->semaphore.waiters), struct thread, elem);
+  struct thread *tb = list_entry (list_front (&sb->semaphore.waiters), struct thread, elem);
+
+  return ta->priority > tb->priority;
 }

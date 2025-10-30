@@ -93,5 +93,13 @@ void thread_schedule_tail(struct thread *prev);
 
 extern bool thread_mlfqs;           // 방법1을 선택했다면 필요 (init.c가 씀)
 bool is_thread(struct thread *t);   // 사용 전에 원형 선언 필요
+/* --- Sleep 관련 함수 외부 선언 --- */
+void thread_wake (int64_t current_ticks);
+bool wake_tick_less (const struct list_elem *a,
+                     const struct list_elem *b,
+                     void *aux UNUSED);
+
+/* Sleep 리스트 접근용 (timer.c에서 사용) */
+extern struct list sleep_list;
 
 #endif /* threads/thread.h */

@@ -369,9 +369,9 @@ thread_unblock (struct thread *t)
     t->age = 0; // Ready 큐 진입 시 age 초기화
     
     // ⭐️ 선점 로직 (Unblock 시) ⭐️
-    if (!list_empty(&ready_list) && thread_current()->priority < list_entry(list_front(&ready_list), struct thread, elem)->priority) {
-        intr_yield_on_return();
-    }
+ if (thread_current()->priority < t->priority) {
+      thread_yield();
+  }
 
     intr_set_level (old_level);
 }

@@ -275,23 +275,29 @@ void
 thread_unblock (struct thread *t)
 {
   enum intr_level old_level;
-
   ASSERT (is_thread (t));
-list_insert_ordered (&ready_list, &t->elem, thread_compare_priority, NULL);
+
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
   t->status = THREAD_READY;
-  aging_on_enqueue (t);
-  ready_push (t);
+
+
+  list_insert_ordered(&ready_list, &t->elem, thread_compare_priority, NULL);
+
   intr_set_level (old_level);
 
-  if (thread_mlfqs)
-    mlfqs_maybe_preempt_on_unblock (t);
-  else if (thread_effective_priority (t) > thread_effective_priority (thread_current ())) {
-    if (intr_context ()) intr_yield_on_return ();
-    else thread_yield ();
+
+  if (thread_mlfqs) {
+    if (intr_context()) intr_yield_on_return();
+    else if (t->priority > thread_current()->priority) thread_yield();
+  } else {
+    if (thread_effective_priority(t) > thread_effective_priority(thread_current())) {
+      if (intr_context()) intr_yield_on_return();
+      else thread_yield();
+    }
   }
 }
+
 
 /* --- 우선순위 --- */
 int

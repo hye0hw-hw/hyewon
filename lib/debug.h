@@ -1,5 +1,6 @@
 #ifndef __LIB_DEBUG_H
 #define __LIB_DEBUG_H
+#define barrier() asm volatile ("" : : : "memory")
 
 /* GCC lets us add "attributes" to functions, function
    parameters, etc. to indicate their properties.

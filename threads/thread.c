@@ -109,6 +109,7 @@ thread_init (void)
   list_init (&q0_list);
   list_init (&q1_list);
   list_init (&q2_list);
+   list_init (&sleep_list);
 
   initial_thread = running_thread ();
   init_thread (initial_thread, "main", PRI_DEFAULT);

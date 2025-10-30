@@ -148,5 +148,10 @@ int thread_get_nice (void);
 void thread_set_nice (int);
 int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
+/* Alarm clock 관련 함수 선언 */
+void thread_sleep (int64_t ticks);
+void thread_wakeup (int64_t ticks);
+int64_t get_next_tick_to_wakeup (void);
+void update_next_tick_to_wakeup (int64_t ticks);
 
 #endif /* threads/thread.h */

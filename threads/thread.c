@@ -361,7 +361,7 @@ next_thread_to_run (void)
 static void
 schedule (void)
 {
-  struct thread *cur = thread_current ();
+  struct thread *cur = running_thread ();
   struct thread *next = next_thread_to_run ();
   struct thread *prev = NULL;
 
@@ -369,11 +369,11 @@ schedule (void)
   ASSERT (cur->status != THREAD_RUNNING);
   ASSERT (is_thread (next));
 
-  if (cur == next)
-    return;
-
+  if (cur != next)
   prev = switch_threads (cur, next);
-  thread_schedule_tail (prev);
+
+thread_schedule_tail (prev);  // ★ 항상 호출되어야 status가 RUNNING으로 복구됨
+
 }
 
 void

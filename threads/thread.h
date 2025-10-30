@@ -43,7 +43,7 @@ struct thread {
   bool mlfqs;                         /* -mlfqs 사용 여부(스레드 생성 시 시스템 전역 설정 복사). */
   int mlfqs_level;                    /* 0,1,2 중 하나 (Q0/Q1/Q2). */
   int time_slice_used;                /* 현재 큐에서 소비한 틱 수. */
-
+    int64_t wake_tick;
   /* Shared between thread.c and synch.c. */
   struct list_elem elem;              /* List element. Ready list or semaphore wait list. */
 

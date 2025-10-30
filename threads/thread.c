@@ -379,10 +379,14 @@ schedule (void)
 void
 thread_schedule_tail (struct thread *prev)
 {
-  struct thread *cur = thread_current ();
-  cur->status = THREAD_RUNNING;
-  (void) prev;
+  struct thread *cur = running_thread ();   // ★ 현재 실행 중 스레드 가져오기
+  cur->status = THREAD_RUNNING;             // 실행 중 상태로 변경
+
+  /* 이전 스레드가 종료(DYING) 상태면 스택 해제 */
+  if (prev != NULL && prev->status == THREAD_DYING && prev != cur)
+    palloc_free_page (prev);
 }
+
 
 static tid_t
 allocate_tid (void)

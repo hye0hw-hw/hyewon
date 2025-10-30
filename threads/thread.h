@@ -102,4 +102,7 @@ bool wake_tick_less (const struct list_elem *a,
 /* 현재 ticks 기준으로 슬립 리스트에서 깨울 애들 깨우기 */
 void thread_wake (int64_t current_ticks);
 
+extern bool thread_mlfqs;
+
+
 #endif /* threads/thread.h */

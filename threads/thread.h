@@ -5,67 +5,58 @@
 #include <list.h>
 #include <stdint.h>
 
-/* States in a thread's life cycle. */
-enum thread_status
-{
-    THREAD_RUNNING, /* Running thread. */
-    THREAD_READY,   /* Not running but ready to run. */
-    THREAD_BLOCKED, /* Waiting for an event to trigger. */
-    THREAD_DYING    /* About to be destroyed. */
+/* 스레드 상태. */
+enum thread_status {
+  THREAD_RUNNING,     /* Running. */
+  THREAD_READY,       /* Ready to run. */
+  THREAD_BLOCKED,     /* Waiting for an event to trigger. */
+  THREAD_DYING        /* About to be destroyed. */
 };
 
-/* Thread identifier type.
-   You can redefine this to whatever type you like. */
+/* 스레드 식별자 타입. */
 typedef int tid_t;
-#define TID_ERROR ((tid_t) - 1) /* Error value for tid_t. */
+#define TID_ERROR ((tid_t) -1)          /* tid_t error value. */
 
-/* Thread priorities. */
-#define PRI_MIN 0      /* Lowest priority. */
-#define PRI_DEFAULT 31 /* Default priority. */
-#define PRI_MAX 63     /* Highest priority. */
+/* 기본 우선순위. (Pintos 기본 값과 호환) */
+#define PRI_MIN 0
+#define PRI_DEFAULT 31
+#define PRI_MAX 63
 
+/* ---- 단순 MLFQS 매개변수 ---- */
+#define MLFQS_Q0_SLICE 2   /* 틱 */
+#define MLFQS_Q1_SLICE 4   /* 틱 */
+#define MLFQS_Q2_SLICE 8   /* 틱 */
 
-struct thread
-{
-    /* Owned by thread.c. */
-    tid_t tid;                 /* Thread identifier. */
-    enum thread_status status; /* Thread state. */
-    char name[16];             /* Name (for debugging purposes). */
-    uint8_t *stack;            /* Saved stack pointer. */
-    int priority;              /* Priority. */
-    struct list_elem allelem;  /* List element for all threads list. */
+#define AGE_THRESHOLD 20   /* 에이징 카운트 임계값 */
+#define AGE_STEP 1         /* 틱당 age 증가량 */
 
-    /* Shared between thread.c and synch.c. */
-    struct list_elem elem; /* List element. */
+struct thread {
+  /* Owned by thread.c. */
+  tid_t tid;                          /* Thread identifier. */
+  enum thread_status status;          /* Thread state. */
+  char name[16];                      /* Name (for debugging purposes). */
+  uint8_t *stack;                     /* Saved stack pointer. */
+  int priority;                       /* 현재(효과적) 우선순위. */
+  int base_priority;                  /* 기본 우선순위(thread_set_priority용 기준). */
+  int age;                            /* ready 대기 중 에이징 카운터. */
+
+  bool mlfqs;                         /* -mlfqs 사용 여부(스레드 생성 시 시스템 전역 설정 복사). */
+  int mlfqs_level;                    /* 0,1,2 중 하나 (Q0/Q1/Q2). */
+  int time_slice_used;                /* 현재 큐에서 소비한 틱 수. */
+
+  /* Shared between thread.c and synch.c. */
+  struct list_elem elem;              /* List element. Ready list or semaphore wait list. */
 
 #ifdef USERPROG
-    /* Owned by userprog/process.c. */
-    uint32_t *pagedir; /* Page directory. */
+  /* Owned by userprog/process.c. */
+  uint32_t *pagedir;                  /* Page directory. */
 #endif
 
-    /* Owned by thread.c. */
-    unsigned magic; /* Detects stack overflow. */
- int original_priority;           /* 원래 우선순위 저장 */
-    struct list donations;           /* 나에게 우선순위를 기부한 스레드들 */
-    struct list_elem donation_elem;  /* donations 리스트에 들어가는 나 자신의 요소 */
-    struct lock *wait_on_lock;       /* 내가 기다리고 있는 락 */
-    int age;     
-    int mlfqs_level;      /* MLFQS 큐 레벨 (0=최상위, 2=최하위) */
-    int ticks_in_slice;
-    int64_t wakeup_tick;         
+  /* Owned by thread.c. */
+  unsigned magic;                     /* Detects stack overflow. */
 };
 
-/* If false (default), use round-robin scheduler.
-   If true, use multi-level feedback queue scheduler.
-   Controlled by kernel command-line option "-o mlfqs". */
-extern bool thread_mlfqs;
-
-bool thread_compare_donation_priority (const struct list_elem *a,
-                                       const struct list_elem *b,
-                                       void *aux);
-void thread_update_priority (struct thread *t);
-void thread_remove_donations (struct lock *lock);
-
+/* 스레드 API (원형) */
 void thread_init (void);
 void thread_start (void);
 
@@ -82,24 +73,20 @@ struct thread *thread_current (void);
 tid_t thread_tid (void);
 const char *thread_name (void);
 
-void thread_exit (void) NO_RETURN;
 void thread_yield (void);
-
-/* Performs some operation on thread t, given auxiliary data AUX. */
-typedef void thread_action_func (struct thread *t, void *aux);
-void thread_foreach (thread_action_func *, void *);
+void thread_exit (void) NO_RETURN;
 
 int thread_get_priority (void);
 void thread_set_priority (int);
 
-int thread_get_nice (void);
-void thread_set_nice (int);
-int thread_get_recent_cpu (void);
-int thread_get_load_avg (void);
-/* Alarm clock 관련 함수 선언 */
-void thread_sleep (int64_t ticks);
-void thread_wakeup (int64_t ticks);
-int64_t get_next_tick_to_wakeup (void);
-void update_next_tick_to_wakeup (int64_t ticks);
+bool thread_is_mlfqs (void);
+
+/* 내부 비교자/유틸 함수 (synch에서도 사용) */
+bool thread_priority_higher (const struct list_elem *, const struct list_elem *, void *);
+int thread_effective_priority (const struct thread *t);
+
+/* 테스트 헬퍼(옵션) */
+void thread_set_mlfqs_enabled (bool on);
+bool thread_mlfqs_enabled (void);
 
 #endif /* threads/thread.h */

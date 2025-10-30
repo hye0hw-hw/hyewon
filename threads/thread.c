@@ -19,7 +19,7 @@ uint32_t thread_stack_ofs = offsetof(struct thread, stack);
 /* 스케줄러용 큐 */
 static struct list ready_list;
 static struct list q0_list, q1_list, q2_list;
-static struct list sleep_list;
+ struct list sleep_list;
 /* current_ticks 시각까지 도달한 잠자는 스레드를 깨운다. */
 
 /* 스레드 우선순위 비교 함수 (ready_list 정렬용) */
@@ -48,7 +48,7 @@ thread_wake (int64_t current_ticks)
 }
 
 /* 깨울 시각 오름차순 정렬 함수 (list_insert_ordered에 사용) */
-static bool wake_tick_less (const struct list_elem *a,
+ bool wake_tick_less (const struct list_elem *a,
                             const struct list_elem *b,
                             void *aux UNUSED)
 {

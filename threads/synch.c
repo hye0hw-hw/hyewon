@@ -1,30 +1,4 @@
-/* This file is derived from source code for the Nachos
-   instructional operating system. The Nachos copyright notice
-   is reproduced in full below. */
 
-/* Copyright (c) 1992-1996 The Regents of the University of California.
-   All rights reserved.
-
-   Permission to use, copy, modify, and distribute this software
-   and its documentation for any purpose, without fee, and
-   without written agreement is hereby granted, provided that the
-   above copyright notice and the following two paragraphs appear
-   in all copies of this software.
-
-   IN NO EVENT SHALL THE UNIVERSITY OF CALIFORNIA BE LIABLE TO
-   ANY PARTY FOR DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR
-   CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OF THIS SOFTWARE
-   AND ITS DOCUMENTATION, EVEN IF THE UNIVERSITY OF CALIFORNIA
-   HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-   THE UNIVERSITY OF CALIFORNIA SPECIFICALLY DISCLAIMS ANY
-   WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-   PURPOSE. THE SOFTWARE PROVIDED HEREUNDER IS ON AN "AS IS"
-   BASIS, AND THE UNIVERSITY OF CALIFORNIA HAS NO OBLIGATION TO
-   PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR
-   MODIFICATIONS.
-*/
 
 #include "threads/synch.h"
 #include <stdio.h>
@@ -129,10 +103,12 @@ sema_up (struct semaphore *sema)
     ASSERT (sema != NULL);
 
     old_level = intr_disable ();
-    if (!list_empty (&sema->waiters))
-        // ⭐️ 우선순위가 가장 높은 스레드 unblock ⭐️
-        thread_unblock (list_entry (list_pop_front (&sema->waiters),
-                                    struct thread, elem));
+if (!list_empty (&sema->waiters)) {
+    list_sort (&sema->waiters, compare_lock_priority, NULL);
+    struct thread *t = list_entry (list_pop_front (&sema->waiters), struct thread, elem);
+    thread_unblock (t);
+}
+
     sema->value++;
     intr_set_level (old_level);
     
@@ -330,9 +306,6 @@ struct semaphore_elem
     struct semaphore semaphore; /* This semaphore. */
 };
 
-/* Initializes condition variable COND. A condition variable
-   allows one piece of code to signal a condition and cooperating
-   code to receive the signal and act upon it. */
 void
 cond_init (struct condition *cond)
 {
@@ -400,6 +373,12 @@ cond_signal (struct condition *cond, struct lock *lock UNUSED)
         sema_up (&list_entry (list_pop_front (&cond->waiters),
                               struct semaphore_elem, elem)
                          ->semaphore);
+   if (!list_empty (&cond->waiters)) {
+    list_sort (&cond->waiters, compare_lock_priority, NULL);
+    sema_up (&list_entry (list_pop_front (&cond->waiters),
+                          struct semaphore_elem, elem)->semaphore);
+}
+
 }
 
 /* Wakes up all threads, if any, waiting on COND (protected by

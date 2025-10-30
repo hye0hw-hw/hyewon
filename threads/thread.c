@@ -21,6 +21,7 @@ static struct thread *idle_thread;
 static struct thread *initial_thread;
 
 static bool thread_started;
+bool thread_mlfqs = false;
 
 static struct lock tid_lock;
 static tid_t next_tid = 1;

@@ -50,6 +50,8 @@ struct thread
     struct list_elem donation_elem;  /* donations 리스트에 들어가는 나 자신의 요소 */
     struct lock *wait_on_lock;       /* 내가 기다리고 있는 락 */
     int age;     
+    int mlfqs_level;      /* MLFQS 큐 레벨 (0=최상위, 2=최하위) */
+    int ticks_in_slice;
     int64_t wakeup_tick;         
 };
 

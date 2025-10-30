@@ -205,31 +205,30 @@ thread_tick (void)
         kernel_ticks++;
     
 
-    struct list_elem *e = list_begin (&ready_list);
-    
-    while (e != list_end (&ready_list)) {
-        struct thread *rt = list_entry (e, struct thread, elem);
-        e = list_next (e);
+    struct list_elem *e = list_begin(&ready_list);
 
-      
-        rt->age++;
+while (e != list_end(&ready_list)) {
+    struct thread *rt = list_entry(e, struct thread, elem);
+    struct list_elem *next = list_next(e);  // ✅ 다음 원소 미리 저장
 
-        if (rt->age >= 20) {
-            rt->age = 0; 
-            
-            if (rt->original_priority < PRI_MAX) {
-                rt->original_priority++; 
-            }
-            
-            thread_update_priority(rt);
-            
-            // ⭐️ 우선순위 변경 시 제거 후 재삽입 ⭐️
-            list_remove(&rt->elem);
-            list_insert_ordered(&ready_list, &rt->elem, thread_compare_priority, NULL);
-        }
-        
+    rt->age++;
 
+    if (rt->age >= 20) {
+        rt->age = 0;
+
+        if (rt->original_priority < PRI_MAX)
+            rt->original_priority++;
+
+        thread_update_priority(rt);
+
+        // ✅ 여기서 remove하더라도 next는 이미 저장됨
+        list_remove(&rt->elem);
+        list_insert_ordered(&ready_list, &rt->elem, thread_compare_priority, NULL);
     }
+
+    e = next;  // ✅ 다음으로 이동
+}
+
     
     // ⭐️ 선점 로직 ⭐️
     struct thread *highest_ready_thread = NULL;

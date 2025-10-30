@@ -19,6 +19,17 @@ uint32_t thread_stack_ofs = offsetof(struct thread, stack);
 /* 스케줄러용 큐 */
 static struct list ready_list;
 static struct list q0_list, q1_list, q2_list;
+static struct list sleep_list;
+
+/* 깨울 시각 오름차순 정렬 함수 (list_insert_ordered에 사용) */
+static bool wake_tick_less (const struct list_elem *a,
+                            const struct list_elem *b,
+                            void *aux UNUSED)
+{
+  const struct thread *ta = list_entry (a, struct thread, elem);
+  const struct thread *tb = list_entry (b, struct thread, elem);
+  return ta->wake_tick < tb->wake_tick;
+}
 
 static struct thread *idle_thread;
 static struct thread *initial_thread;

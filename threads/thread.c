@@ -246,6 +246,42 @@ while (e != list_end(&ready_list)) {
     if (++thread_ticks >= TIME_SLICE)
         intr_yield_on_return ();
 }
+static int64_t next_tick_to_wakeup;
+
+/* 현재 스레드를 슬립 상태로 만든다. */
+void
+thread_sleep (int64_t ticks)
+{
+    struct thread *cur = thread_current ();
+
+    ASSERT (!intr_context ());
+    ASSERT (cur != idle_thread);
+
+    cur->wakeup_tick = ticks;
+    list_insert_ordered (&sleep_list, &cur->elem, compare_tick, NULL);
+    thread_block ();
+}
+
+/* 깨워야 할 스레드들을 확인한다. */
+void
+thread_wakeup (int64_t ticks)
+{
+    struct list_elem *e = list_begin (&sleep_list);
+
+    while (e != list_end (&sleep_list))
+    {
+        struct thread *t = list_entry (e, struct thread, elem);
+        if (t->wakeup_tick <= ticks)
+        {
+            e = list_remove (&t->elem);
+            thread_unblock (t);
+        }
+        else
+        {
+            e = list_next (e);
+        }
+    }
+}
 
 /* Prints thread statistics. */
 void

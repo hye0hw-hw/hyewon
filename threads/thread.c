@@ -204,15 +204,14 @@ thread_tick (void)
     else
         kernel_ticks++;
     
-    // ⭐️ 에이징 로직 (PANIC 해결 루프) ⭐️
+
     struct list_elem *e = list_begin (&ready_list);
     
     while (e != list_end (&ready_list)) {
         struct thread *rt = list_entry (e, struct thread, elem);
-        
-        // ⭐️ 다음 요소를 미리 저장 ⭐️
-        struct list_elem *next = list_next (e); 
+        e = list_next (e);
 
+      
         rt->age++;
 
         if (rt->age >= 20) {
@@ -229,8 +228,7 @@ thread_tick (void)
             list_insert_ordered(&ready_list, &rt->elem, thread_compare_priority, NULL);
         }
         
-        // ⭐️ 저장된 다음 요소로 이동 ⭐️
-        e = next; 
+
     }
     
     // ⭐️ 선점 로직 ⭐️

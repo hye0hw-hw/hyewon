@@ -62,7 +62,7 @@ void thread_start (void);
 
 void thread_tick (void);
 void thread_print_stats (void);
-void thread_schedule_tail(struct thread *prev);
+
 
 typedef void thread_func (void *aux);
 tid_t thread_create (const char *name, int priority, thread_func *, void *);
@@ -89,6 +89,7 @@ int thread_effective_priority (const struct thread *t);
 /* 테스트 헬퍼(옵션) */
 void thread_set_mlfqs_enabled (bool on);
 bool thread_mlfqs_enabled (void);
+void thread_schedule_tail(struct thread *prev);
 
 extern bool thread_mlfqs;           // 방법1을 선택했다면 필요 (init.c가 씀)
 bool is_thread(struct thread *t);   // 사용 전에 원형 선언 필요

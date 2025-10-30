@@ -21,6 +21,18 @@ static struct list ready_list;
 static struct list q0_list, q1_list, q2_list;
 static struct list sleep_list;
 /* current_ticks 시각까지 도달한 잠자는 스레드를 깨운다. */
+
+/* 스레드 우선순위 비교 함수 (ready_list 정렬용) */
+bool
+thread_compare_priority(const struct list_elem *a,
+                        const struct list_elem *b,
+                        void *aux UNUSED)
+{
+  const struct thread *ta = list_entry(a, struct thread, elem);
+  const struct thread *tb = list_entry(b, struct thread, elem);
+  return ta->priority > tb->priority;
+}
+
 void
 thread_wake (int64_t current_ticks)
 {

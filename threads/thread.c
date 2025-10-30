@@ -20,6 +20,20 @@ uint32_t thread_stack_ofs = offsetof(struct thread, stack);
 static struct list ready_list;
 static struct list q0_list, q1_list, q2_list;
 static struct list sleep_list;
+/* current_ticks 시각까지 도달한 잠자는 스레드를 깨운다. */
+void
+thread_wake (int64_t current_ticks)
+{
+  while (!list_empty (&sleep_list)) {
+    struct thread *t = list_entry (list_front (&sleep_list), struct thread, elem);
+    if (t->wake_tick <= current_ticks) {
+      list_pop_front (&sleep_list);
+      thread_unblock (t);              /* -> READY로 */
+    } else {
+      break;                           /* 리스트가 정렬되어 있으므로 이후는 전부 아직 */
+    }
+  }
+}
 
 /* 깨울 시각 오름차순 정렬 함수 (list_insert_ordered에 사용) */
 static bool wake_tick_less (const struct list_elem *a,
@@ -251,7 +265,7 @@ thread_unblock (struct thread *t)
   enum intr_level old_level;
 
   ASSERT (is_thread (t));
-
+list_insert_ordered (&ready_list, &t->elem, thread_compare_priority, NULL);
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
   t->status = THREAD_READY;

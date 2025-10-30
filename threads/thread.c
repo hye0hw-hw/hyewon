@@ -174,7 +174,6 @@ struct thread *
 thread_current (void)
 {
   struct thread *t = running_thread ();
-  ASSERT (t->status == THREAD_RUNNING);
   ASSERT (is_thread (t));
   return t;
 }

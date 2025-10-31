@@ -87,23 +87,15 @@ timer_elapsed (int64_t then)
 /* Sleeps for approximately TICKS timer ticks.  Interrupts must
    be turned on. */
 void
-timer_sleep (int64_t ticks_to_sleep)
+timer_sleep (int64_t ticks)
 {
-  if (ticks_to_sleep <= 0) return;
+    int64_t start = timer_ticks ();
 
-  enum intr_level old = intr_disable();
-
-  struct thread *cur = thread_current();
-  cur->wake_tick = timer_ticks() + ticks_to_sleep;
-
-  /* 깨어날 시각 오름차순으로 sleep_list에 넣기 */
-  list_insert_ordered (&sleep_list, &cur->elem, wake_tick_less, NULL);
-
-  thread_block();  /* 깨어날 때까지 BLOCKED */
-
-  intr_set_level(old);
+    ASSERT (intr_get_level () == INTR_ON);
+    //while (timer_elapsed (start) < ticks)
+    //    thread_yield ();
+    thread_sleep(start + ticks);
 }
-
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be
    turned on. */
@@ -142,15 +134,26 @@ timer_mdelay (int64_t ms)
     real_time_delay (ms, 1000);
 }
 
+/* Sleeps for approximately US microseconds.  Interrupts need not
+   be turned on.
 
-
+   Busy waiting wastes CPU cycles, and busy waiting with
+   interrupts off for the interval between timer ticks or longer
+   will cause timer ticks to be lost.  Thus, use timer_usleep()
+   instead if interrupts are enabled. */
 void
 timer_udelay (int64_t us)
 {
     real_time_delay (us, 1000 * 1000);
 }
 
+/* Sleeps execution for approximately NS nanoseconds.  Interrupts
+   need not be turned on.
 
+   Busy waiting wastes CPU cycles, and busy waiting with
+   interrupts off for the interval between timer ticks or longer
+   will cause timer ticks to be lost.  Thus, use timer_nsleep()
+   instead if interrupts are enabled.*/
 void
 timer_ndelay (int64_t ns)
 {
@@ -170,7 +173,11 @@ timer_interrupt (struct intr_frame *args UNUSED)
 {
     ticks++;
     thread_tick ();
-   thread_wake (ticks);
+
+    
+    if (get_next_tick_to_wakeup() <= ticks) {
+      thread_wakeup(ticks); 
+    }
 }
 
 /* Returns true if LOOPS iterations waits for more than one timer

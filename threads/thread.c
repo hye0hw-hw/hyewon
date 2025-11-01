@@ -17,19 +17,12 @@
 #define THREAD_MAGIC 0xcd6abf4b
 
 static struct list ready_list;
-
 static struct list mlfqs_ready_queues[3];
-
 static struct list all_list;
-
 static struct list sleep_list;
-
 static int64_t next_tick_to_wakeup = INT64_MAX;
-
 static struct thread *idle_thread;
-
 static struct thread *initial_thread;
-
 static struct lock tid_lock;
 
 struct kernel_thread_frame

@@ -37,7 +37,6 @@ struct thread
 
     int64_t wakeup_tick;
     int age;
-    
     int mlfqs_level;
     int ticks_in_slice;
     
